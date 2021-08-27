@@ -1,4 +1,4 @@
-use okapi::openapi3::{Object, Responses, SecurityRequirement, SecurityScheme, SecuritySchemeData};
+use okapi::openapi3::{Object, Responses, SchemeIdentifier, SecurityRequirement, SecurityScheme, SecuritySchemeData};
 use rocket::serde::json::Json;
 use rocket::{
     get,
@@ -58,9 +58,6 @@ impl<'a, 'r> OpenApiFromRequest<'a> for KeyAuthorize {
         // https://swagger.io/docs/specification/authentication/basic-authentication/
         let security_scheme = SecurityScheme {
             description: Some("requires a key to access".into()),
-            // scheme identifier is the keyvalue under which this security_scheme will be filed in
-            // the openapi.json file
-            scheme_identifier: "FixedKeyApiKeyAuth".into(),
             // this will show where and under which name the value will be found in the HTTP header
             // in this case, the header key x-api-key will be searched
             // other alternatives are "query", "cookie" according to the openapi specs.
@@ -73,9 +70,16 @@ impl<'a, 'r> OpenApiFromRequest<'a> for KeyAuthorize {
             extensions: Object::default(),
         };
 
+        // scheme identifier is the keyvalue under which this security_scheme will be filed in
+        // the openapi.json file
+        let scheme_identifier = SchemeIdentifier {
+            scheme_identifier: "FixedKeyApiKeyAuth".into()
+        };
+
         Ok(RequestHeaderInput::Security((
             security_scheme,
             security_req,
+            scheme_identifier,
         )))
     }
 }

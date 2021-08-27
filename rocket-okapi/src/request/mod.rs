@@ -7,7 +7,7 @@ mod from_request_impls;
 use super::gen::OpenApiGenerator;
 use super::Result;
 extern crate okapi;
-use okapi::openapi3::{Parameter, RequestBody, SecurityRequirement, SecurityScheme};
+use okapi::openapi3::{Parameter, RequestBody, SchemeIdentifier, SecurityRequirement, SecurityScheme};
 
 /// Expose this to the public to be use when manualy implementing a
 /// [Form Guard](https://api.rocket.rs/master/rocket/form/trait.FromForm.html).
@@ -69,7 +69,7 @@ pub enum RequestHeaderInput {
     /// Parameter input to the path, can be used to parse values from the header for example
     Parameter(Parameter),
     /// the request guard implements a security scheme
-    Security((SecurityScheme, SecurityRequirement)),
+    Security((SecurityScheme, SecurityRequirement, SchemeIdentifier)),
 }
 
 impl Into<RequestHeaderInput> for Parameter {
