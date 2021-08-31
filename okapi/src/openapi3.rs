@@ -352,8 +352,6 @@ pub struct Header {
 #[cfg_attr(feature = "derive_json_schema", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct SecurityScheme {
-    // unique name for the security scheme
-    pub scheme_identifier: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(flatten)]
@@ -364,14 +362,25 @@ pub struct SecurityScheme {
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[cfg_attr(feature = "derive_json_schema", derive(JsonSchema))]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct SchemeIdentifier {
+    #[serde(default)]
+    /// Unique name for the security scheme.
+    pub scheme_identifier: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "derive_json_schema", derive(JsonSchema))]
+#[serde(tag = "type")]
 #[allow(clippy::large_enum_variant)]
 pub enum SecuritySchemeData {
+    #[serde(rename = "apiKey")]
     ApiKey {
         name: String,
         #[serde(rename = "in")]
         location: String,
     },
+    #[serde(rename = "http", rename_all = "camelCase")]
     Http {
         scheme: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -381,6 +390,7 @@ pub enum SecuritySchemeData {
     OAuth2 {
         flows: OAuthFlows,
     },
+    #[serde(rename = "openIdConnect", rename_all = "camelCase")]
     OpenIdConnect {
         open_id_connect_url: String,
     },
