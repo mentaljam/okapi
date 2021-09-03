@@ -6,7 +6,7 @@ only change your usage in Cargo toml to something like this by adding the "packa
 ```toml
 okapi = { version = "0.x.x", features = ["derive_json_schema"], package = "okapi_fork" }
 rocket_okapi = { version = "0.x.x", package = "rocket_okapi_fork" }
-
+rocket_okapi_ui = "0.x.x"
 ```
 
 Work in progress!
@@ -18,9 +18,11 @@ Work in progress!
 extern crate rocket;
 #[macro_use]
 extern crate rocket_okapi;
+#[macro_use]
+extern crate rocket_okapi_ui;
 
 use rocket_contrib::json::Json;
-use rocket_okapi::swagger_ui::make_swagger_ui;
+use rocket_okapi_ui::*;
 use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
 
@@ -59,20 +61,26 @@ fn hidden() -> Json<&'static str> {
     Json("Hidden from swagger!")
 }
 
-pub fn make_rocket() -> rocket::Rocket {
+#[launch]
+fn rocket() -> _ {
+    // You can optionally host Swagger UI
+    // To do this, create a config to attach it later
+    let swagger_config = SwaggerUIConfig {
+        url: "../openapi.json".to_owned(),
+        ..Default::default()
+    };
+
     rocket::build()
         // routes_with_openapi![...] will host the openapi document at openapi.json
         .mount(
             "/",
             routes_with_openapi![get_user, hidden],
         )
-        // You can optionally host swagger-ui too
+        // Attach the Swagger UI config and mount the routes
+        .attach(swagger_config.fairing())
         .mount(
             "/swagger-ui/",
-            make_swagger_ui(&SwaggerUIConfig {
-                url: "../openapi.json".to_owned(),
-                ..Default::default()
-            }),
+            swagger_ui_routes![],
         )
 }
 ```
