@@ -12,6 +12,7 @@ keywords = ["rust", "openapi", "swagger", "rocket"]
 schemars = { version = "0.8" }
 okapi = { version = "0.6.0", path = "../okapi", package = "okapi_fork" }
 rocket_okapi_codegen = { version = "0.7.1", path = "../rocket-okapi-codegen", package = "rocket_okapi_codegen_fork" }
+rocket_okapi_ui = { version = "0.1.0-rc.1", path = "../rocket-okapi-ui", optional = true }
 serde = "1.0"
 serde_json = "1.0"
 
@@ -21,3 +22,6 @@ branch           = "v0.5-rc"
 version          = "0.5.0-rc.1"
 default-features = false
 features         = ["json"]
+
+[features]
+building-docs = ["rocket_okapi_ui"]

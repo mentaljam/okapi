@@ -9,35 +9,43 @@
 //!
 //! ```toml
 //! [dependencies]
-//! rocket_okapi = "0.8.0-rc.1"
 //! schemars = "0.8"
-//! okapi = { version = "0.6.1", features = ["derive_json_schema"] }
+//! serde = "1.0"
+//! okapi = { version = "0.6.1", package = "okapi_fork" }
+//! rocket_okapi = { version = "0.8.0-rc.1", package = "rocket_okapi_fork" }
+//! ## Add rocket_okapi_ui if you want do embedd Swagger UI
+//! rocket_okapi_ui = "0.1.0-rc.1"
 //! ```
 //!
 //! To add documentation to a set of endpoints, a couple of steps are required:
 //! - The request and response types of the endpoint must implement
 //!   [JsonSchema](schemars::JsonSchema).
 //! - Route handlers must be marked with [`#[openapi]`](openapi).
-//! - Rocket should must be launched with the [SwaggerUIConfig](swagger_ui::SwaggerUIConfig)
-//!   fairing attached.
 //! - After that, you can simply replace [routes!](rocket::routes!) with
 //!   [routes_with_openapi!]. This will append an additional route to the
 //!   resulting [Vec]<[Route](rocket::Route)>, which contains the `openapi.json`
 //!   file that is required by swagger.
-//! - Now that we have the json file that we need and configuration attached,
-//!   we can serve the swagger web interface at another endpoint by mounting the
-//!   routes created with [swagger_ui_routes![]](swagger_ui_routes!)
 //!
-//! Now we should be able to load the example in the browser!
+//! To serve [Swagger UI](https://swagger.io/tools/swagger-ui/) directly from
+//! your Rocket application additional steps are required:
+//! - Add the `rocket_okapi_ui` dependency to your `Cargo.toml`
+//! - Attach the [SwaggerUIConfig](rocket_okapi_ui::SwaggerUIConfig) fairing to Rocket.
+//! - Mount the Swagger UI routes created with [swagger_ui_routes![]](rocket_okapi_ui::swagger_ui_routes!).
+//!
+//! Now you should be able to load the example in the browser!
 //!
 //! ### Example
-//! ```rust, no_run
-//! use rocket::get;
-//! use rocket::serde::json::Json;
-//! use rocket_okapi::{openapi, routes_with_openapi, JsonSchema};
-//! use rocket_okapi::swagger_ui::{make_swagger_ui, SwaggerUIConfig};
+//! ```rust
+//! #[macro_use] extern crate rocket;
+//! #[macro_use] extern crate rocket_okapi;
+//! #[macro_use] extern crate rocket_okapi_ui;
 //!
-//! #[derive(serde::Serialize, JsonSchema)]
+//! use rocket::serde::json::Json;
+//! use rocket_okapi::JsonSchema;
+//! use rocket_okapi_ui::{SwaggerUIConfig, UrlObject};
+//! use serde::Serialize;
+//!
+//! #[derive(Serialize, JsonSchema)]
 //! struct Response {
 //!     reply: String,
 //! }
@@ -51,20 +59,17 @@
 //! }
 //!
 //! fn get_docs() -> SwaggerUIConfig {
-//!     use rocket_okapi::swagger_ui::UrlObject;
-//!
 //!     SwaggerUIConfig {
-//!         url: "/my_resource/openapi.json".to_string(),
-//!         urls: vec![UrlObject::new("My Resource", "/v1/company/openapi.json")],
+//!         urls: vec![UrlObject::new("API v1", "/api/v1/openapi.json")],
 //!         ..Default::default()
 //!     }
 //! }
 //!
-//! #[rocket::launch]
+//! #[launch]
 //! fn rocket() -> _ {
 //!     rocket::build()
 //!         .attach(get_docs().fairing())
-//!         .mount("/my_resource", routes_with_openapi![my_controller])
+//!         .mount("/api/v1", routes_with_openapi![my_controller])
 //!         .mount("/swagger",     swagger_ui_routes![])
 //! }
 //! ```
@@ -86,8 +91,6 @@ pub mod response;
 /// Contains then `OpenApiSettings` struct, which can be used to customise the behaviour of a
 /// `Generator`.
 pub mod settings;
-/// Contains the functions and structs required to display the swagger web ui.
-pub mod swagger_ui;
 /// Assorted function that are used throughout the application.
 pub mod util;
 

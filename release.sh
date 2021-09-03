@@ -4,4 +4,5 @@ sleep 20
 cargo release --manifest-path rocket-okapi-codegen/Cargo.toml --skip-tag --skip-push $@
 sleep 20
 cargo release --manifest-path rocket-okapi/Cargo.toml --skip-tag --skip-push $@
-
+sleep 20
+cargo release --manifest-path rocket-okapi-ui/Cargo.toml --skip-tag --skip-push $@

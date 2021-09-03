@@ -1,0 +1,23 @@
+[package]
+name = "rocket_okapi_ui"
+description = "Crate for embedding Swagger Web UI into Rocket applications"
+version = "0.1.0-rc.1"
+repository = "https://github.com/TotalKrill/okapi"
+authors = [
+    "Graham Esau <gesau@hotmail.co.uk>",
+    "Kristoffer Ödmark <kristoffer@widefind.se>",
+    "Petr Tsymbarovich <petr@tsymbarovich.ru>"
+]
+edition = "2018"
+license = "MIT"
+keywords = ["rust", "openapi", "swagger", "rocket"]
+
+[dependencies]
+serde = "1.0"
+
+[dependencies.rocket]
+git              = "https://github.com/SergioBenitez/Rocket"
+branch           = "v0.5-rc"
+version          = "0.5.0-rc.1"
+default-features = false
+features         = ["json"]

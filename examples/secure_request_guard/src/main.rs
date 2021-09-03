@@ -12,9 +12,8 @@ use rocket_okapi::{
     request::{OpenApiFromRequest, RequestHeaderInput},
     response::OpenApiResponder,
     routes_with_openapi,
-    swagger_ui::SwaggerUIConfig,
-    swagger_ui_routes,
 };
+use rocket_okapi_ui::{SwaggerUIConfig, swagger_ui_routes};
 
 pub struct KeyAuthorize;
 
