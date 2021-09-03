@@ -12,7 +12,8 @@ use rocket_okapi::{
     request::{OpenApiFromRequest, RequestHeaderInput},
     response::OpenApiResponder,
     routes_with_openapi,
-    swagger_ui::{make_swagger_ui, SwaggerUIConfig},
+    swagger_ui::SwaggerUIConfig,
+    swagger_ui_routes,
 };
 
 pub struct KeyAuthorize;
@@ -106,19 +107,19 @@ pub fn restricted(_key: KeyAuthorize) -> Json<String> {
     Json("You got access here, hurray".into())
 }
 
-#[tokio::main]
-async fn main() {
+#[rocket::launch]
+fn rocket() -> _ {
     let rocket_config = Config::debug_default();
+    let swagger_config = SwaggerUIConfig {
+        url: "/openapi.json".to_string(),
+        ..Default::default()
+    };
 
-    let e = rocket::custom(rocket_config)
+    rocket::custom(rocket_config)
+        .attach(swagger_config.fairing())
         .mount("/", routes_with_openapi![restricted])
         .mount(
             "/api/",
-            make_swagger_ui(&SwaggerUIConfig {
-                url: "/openapi.json".to_string(),
-                ..Default::default()
-            }),
+            swagger_ui_routes![],
         )
-        .launch()
-        .await;
 }

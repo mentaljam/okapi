@@ -1,33 +1,31 @@
-use rocket::http::Method;
-use rocket::response::Redirect;
-use rocket::route::{Handler, Outcome};
-use rocket::{Data, Request, Route};
+use rocket::response::{self, Redirect, Responder};
+use rocket::Request;
 
 /// A handler that instead of serving content always redirects to some specified destination URL.
 #[derive(Clone)]
-pub struct RedirectHandler {
-    dest: &'static str,
+pub struct RedirectHandler<'r> {
+    dest: &'r str,
 }
 
-impl RedirectHandler {
+impl<'r> RedirectHandler<'r> {
     /// Create a new `RedirectHandler` that redirects to the specified URL.
     #[must_use]
-    pub fn to(dest: &'static str) -> Self {
+    pub fn to(dest: &'r str) -> Self {
         Self {
             dest: dest.trim_start_matches('/'),
         }
     }
-
-    /// Create a new `Route` from this `Handler`.
-    pub fn into_route(self, path: impl AsRef<str>) -> Route {
-        Route::new(Method::Get, path.as_ref(), self)
-    }
 }
 
-#[rocket::async_trait]
-impl Handler for RedirectHandler {
-    async fn handle<'r>(&self, req: &'r Request<'_>, _: Data<'r>) -> Outcome<'r> {
-        let path = req.route().unwrap().uri.base().trim_end_matches('/');
-        Outcome::from(req, Redirect::to(format!("{}/{}", path, self.dest)))
+impl<'r, 'o : 'r> Responder<'r, 'o> for RedirectHandler<'r> {
+    fn respond_to(self, request: &'r Request<'_>) -> response::Result<'o> {
+        let path = request
+            .route()
+            .unwrap()
+            .uri
+            .base()
+            .trim_end_matches('/');
+        Redirect::to(format!("{}/{}", path, self.dest))
+            .respond_to(request)
     }
 }

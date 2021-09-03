@@ -93,9 +93,15 @@ fn create_post_by_query(post: Post) -> Option<Json<Post>> {
     Some(Json(post))
 }
 
-#[rocket::main]
-async fn main() {
-    let result = rocket::build()
+#[rocket::launch]
+fn rocket() -> _ {
+    let swagger_ui_config = SwaggerUIConfig {
+        url: "../openapi.json".to_owned(),
+        ..Default::default()
+    };
+
+    rocket::build()
+        .attach(swagger_ui_config.fairing())
         .mount(
             "/",
             routes_with_openapi![
@@ -109,12 +115,6 @@ async fn main() {
         )
         .mount(
             "/swagger-ui/",
-            make_swagger_ui(&SwaggerUIConfig {
-                url: "../openapi.json".to_owned(),
-                ..SwaggerUIConfig::default()
-            }),
+            swagger_ui_routes![],
         )
-        .launch()
-        .await;
-    assert!(result.is_ok());
 }

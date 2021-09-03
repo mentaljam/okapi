@@ -1,18 +1,11 @@
-use crate::handlers::{ContentHandler, RedirectHandler};
+use crate::handlers::RedirectHandler;
 use serde::{Deserialize, Serialize};
 
-use rocket::http::ContentType;
-use rocket::Route;
+use rocket::fairing::{AdHoc, Fairing};
+use rocket::serde::json::Json;
+use rocket::http::{ContentType, Status};
+use rocket::get;
 
-macro_rules! static_file {
-    ($name: literal, $type: ident) => {
-        ContentHandler::bytes(
-            ContentType::$type,
-            include_bytes!(concat!("../swagger-ui/", $name)),
-        )
-        .into_route(concat!("/", $name))
-    };
-}
 
 /// Used to control the way models are displayed by default.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -126,6 +119,15 @@ impl Default for SwaggerUIConfig {
     }
 }
 
+impl SwaggerUIConfig {
+    /// Fairing for loading Swagger configuration from Rocket figment
+    pub fn fairing(self) -> impl Fairing {
+        AdHoc::try_on_ignite("SwaggerUIConfig", move |rocket| async move {
+            Ok(rocket.manage(self))
+        })
+    }
+}
+
 /// Contains a named url.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UrlObject {
@@ -146,20 +148,60 @@ impl UrlObject {
     }
 }
 
-/// Transform the provided `SwaggerUIConfig` into a list of `Route`s that serve the swagger web ui.
-#[must_use]
-pub fn make_swagger_ui(config: &SwaggerUIConfig) -> impl Into<Vec<Route>> {
-    let config_handler = ContentHandler::json(config);
-    vec![
-        config_handler.into_route("/swagger-ui-config.json"),
-        RedirectHandler::to("index.html").into_route("/"),
-        static_file!("favicon-16x16.png", PNG),
-        static_file!("favicon-32x32.png", PNG),
-        static_file!("index.html", HTML),
-        static_file!("oauth2-redirect.html", HTML),
-        static_file!("swagger-ui.js", JavaScript),
-        static_file!("swagger-ui-standalone-preset.js", JavaScript),
-        static_file!("swagger-ui-bundle.js", JavaScript),
-        static_file!("swagger-ui.css", CSS),
-    ]
+macro_rules! swagger_static_files {
+    ($file:ident, $($name:literal => $type:ident),*) => (
+        match $file {
+            $(
+                $name => (
+                    Status::Ok,
+                    (ContentType::$type, include_bytes!(concat!("../swagger-ui/", $name)))
+                ),
+            )*
+            _ => (Status::NotFound, (ContentType::Plain, &[]))
+        }
+    );
+}
+
+/// Route for Swagger UI configuration file
+#[get("/swagger-ui-config.json")]
+pub fn swagger_ui_config(
+    // config: &SwaggerUIConfig,
+    config: &rocket::State<SwaggerUIConfig>,
+) -> Json<&SwaggerUIConfig> {
+    Json(config.inner())
+}
+
+/// Route for Swagger static files
+#[get("/<file>")]
+pub fn swagger_ui_static(
+    file: &str,
+) -> (Status, (ContentType, &'static [u8])) {
+    swagger_static_files!(file,
+        "favicon-16x16.png"               => PNG,
+        "favicon-32x32.png"               => PNG,
+        "index.html"                      => HTML,
+        "oauth2-redirect.html"            => HTML,
+        "swagger-ui.js"                   => JavaScript,
+        "swagger-ui-standalone-preset.js" => JavaScript,
+        "swagger-ui-bundle.js"            => JavaScript,
+        "swagger-ui.css"                  => CSS
+    )
+}
+
+/// Redirects `/<swagger-ui-base>/` to `/<swagger-ui-base>/index.html`
+#[get("/")]
+pub fn swagger_ui_redirect<'r>() -> RedirectHandler<'r> {
+    RedirectHandler::to("index.html")
+}
+
+/// Create Rocket routes for Swagger UI
+#[macro_export]
+macro_rules! swagger_ui_routes {
+    [] => {
+        rocket::routes![
+            rocket_okapi::swagger_ui::swagger_ui_config,
+            rocket_okapi::swagger_ui::swagger_ui_static,
+            rocket_okapi::swagger_ui::swagger_ui_redirect,
+        ]
+    };
 }

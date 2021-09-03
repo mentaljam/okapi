@@ -4,20 +4,32 @@
 //! facilities to also serve the documentation alongside your api.
 //!
 //! # Usage
+//!
 //! First, add the following lines to your `Cargo.toml`
+//!
 //! ```toml
 //! [dependencies]
-//! rocket_okapi = "0.5"
+//! rocket_okapi = "0.8.0-rc.1"
 //! schemars = "0.8"
-//! okapi = { version = "0.5", features = ["derive_json_schema"] }
+//! okapi = { version = "0.6.1", features = ["derive_json_schema"] }
 //! ```
-//! To add documentation to a set of endpoints, a couple of steps are required. The request and
-//! response types of the endpoint must implement `JsonSchema`. Secondly, the function must be
-//! marked with `#[openapi]`. After that, you can simply replace `routes!` with
-//! `routes_with_openapi!`. This will append an additional route to the resulting `Vec<Route>`,
-//! which contains the `openapi.json` file that is required by swagger. Now that we have the json
-//! file that we need, we can serve the swagger web interface at another endpoint, and we should be
-//! able to load the example in the browser!
+//!
+//! To add documentation to a set of endpoints, a couple of steps are required:
+//! - The request and response types of the endpoint must implement
+//!   [JsonSchema](schemars::JsonSchema).
+//! - Route handlers must be marked with [`#[openapi]`](openapi).
+//! - Rocket should must be launched with the [SwaggerUIConfig](swagger_ui::SwaggerUIConfig)
+//!   fairing attached.
+//! - After that, you can simply replace [routes!](rocket::routes!) with
+//!   [routes_with_openapi!]. This will append an additional route to the
+//!   resulting [Vec]<[Route](rocket::Route)>, which contains the `openapi.json`
+//!   file that is required by swagger.
+//! - Now that we have the json file that we need and configuration attached,
+//!   we can serve the swagger web interface at another endpoint by mounting the
+//!   routes created with [swagger_ui_routes![]](swagger_ui_routes!)
+//!
+//! Now we should be able to load the example in the browser!
+//!
 //! ### Example
 //! ```rust, no_run
 //! use rocket::get;
@@ -48,11 +60,12 @@
 //!     }
 //! }
 //!
-//! fn main() {
+//! #[rocket::launch]
+//! fn rocket() -> _ {
 //!     rocket::build()
+//!         .attach(get_docs().fairing())
 //!         .mount("/my_resource", routes_with_openapi![my_controller])
-//!         .mount("/swagger", make_swagger_ui(&get_docs()))
-//!         .launch();
+//!         .mount("/swagger",     swagger_ui_routes![])
 //! }
 //! ```
 
